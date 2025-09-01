@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Improvement Recommendations - AI Resume Evaluator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-lightbulb me-2"></i>Improvement Recommendations
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Actionable insights to boost your resume performance
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('results') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Results
+                    </a>
+                    <a href="{{ url_for('download_report') }}" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i>Download Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-navy">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Current Score: <span style="color: {{ results.scores.tier_color }}">{{ results.scores.composite }}/100</span>
+                            </h5>
+                            <p class="mb-0">
+                                {% set improvements_count = results.recommendations|length %}
+                                {% if improvements_count == 0 %}
+                                    🎉 Excellent! No major improvements needed.
+                                {% elif improvements_count <= 3 %}
+                                    {{ improvements_count }} key area(s) identified for improvement.
+                                {% else %}
+                                    {{ improvements_count }} areas identified for optimization.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if results.scores.composite >= 80 %}
+                                <div class="performance-badge excellent">
+                                    <i class="fas fa-trophy me-1"></i>Excellent
+                                </div>
+                            {% elif results.scores.composite >= 70 %}
+                                <div class="performance-badge good">
+                                    <i class="fas fa-thumbs-up me-1"></i>Good
+                                </div>
+                            {% elif results.scores.composite >= 60 %}
+                                <div class="performance-badge average">
+                                    <i class="fas fa-balance-scale me-1"></i>Average
+                                </div>
+                            {% else %}
+                                <div class="performance-badge needs-work">
+                                    <i class="fas fa-tools me-1"></i>Needs Work
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if results.recommendations %}
+    <!-- Priority-based Recommendations -->
+    {% set high_priority = results.recommendations|selectattr("priority", "equalto", "High")|list %}
+    {% set medium_priority = results.recommendations|selectattr("priority", "equalto", "Medium")|list %}
+    {% set low_priority = results.recommendations|selectattr("priority", "equalto", "Low")|list %}
+
+    {% if high_priority %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="recommendations-section">
+                <div class="section-header high-priority">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        High Priority Actions
+                    </h4>
+                    <span class="priority-badge high">{{ high_priority|length }}</span>
+                </div>
+                
+                <div class="recommendations-grid">
+                    {% for rec in high_priority %}
+                    <div class="recommendation-card high-priority">
+                        <div class="rec-header">
+                            <div class="rec-category">
+                                <i class="fas fa-{{ 'spell-check' if rec.category == 'Grammar' else 'align-left' if rec.category == 'Formatting' else 'robot' if rec.category == 'ATS Compatibility' else 'lightbulb' }} me-2"></i>
+                                {{ rec.category }}
+                            </div>
+                            <span class="priority-tag high">HIGH</span>
+                        </div>
+                        
+                        <div class="rec-content">
+                            <h6 class="issue-title">Issue Identified:</h6>
+                            <p class="issue-text">{{ rec.issue }}</p>
+                            
+                            <h6 class="recommendation-title">Recommended Action:</h6>
+                            <p class="recommendation-text">{{ rec.recommendation }}</p>
+                            
+                            <div class="impact-section">
+                                <small class="impact-label">
+                                    <i class="fas fa-chart-line me-1"></i>Impact:
+                                </small>
+                                <small class="impact-text">{{ rec.impact }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if medium_priority %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="recommendations-section">
+                <div class="section-header medium-priority">
+                    <h4 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Medium Priority Actions
+                    </h4>
+                    <span class="priority-badge medium">{{ medium_priority|length }}</span>
+                </div>
+                
+                <div class="recommendations-grid">
+                    {% for rec in medium_priority %}
+                    <div class="recommendation-card medium-priority">
+                        <div class="rec-header">
+                            <div class="rec-category">
+                                <i class="fas fa-{{ 'key' if rec.category == 'Keywords' else 'robot' if rec.category == 'ATS Compatibility' else 'edit' if rec.category == 'Content Quality' else 'lightbulb' }} me-2"></i>
+                                {{ rec.category }}
+                            </div>
+                            <span class="priority-tag medium">MEDIUM</span>
+                        </div>
+                        
+                        <div class="rec-content">
+                            <p class="recommendation-text">{{ rec.recommendation }}</p>
+                            
+                            <div class="impact-section">
+                                <small class="impact-label">
+                                    <i class="fas fa-chart-line me-1"></i>Impact:
+                                </small>
+                                <small class="impact-text">{{ rec.impact }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if low_priority %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="recommendations-section">
+                <div class="section-header low-priority">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Low Priority Optimizations
+                    </h4>
+                    <span class="priority-badge low">{{ low_priority|length }}</span>
+                </div>
+                
+                <div class="row g-3">
+                    {% for rec in low_priority %}
+                    <div class="col-md-6">
+                        <div class="quick-tip">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            {{ rec.recommendation }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- No Recommendations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="no-recommendations">
+                <div class="text-center py-5">
+                    <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
+                    <h3>Outstanding Performance!</h3>
+                    <p class="lead">Your resume shows excellent quality across all analyzed metrics.</p>
+                    <p class="text-muted">No specific improvements are required at this time.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Exemplar Comparison -->
+    {% if results.exemplar_comparison and results.exemplar_comparison.best_match %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-navy">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Industry Benchmark Comparison
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Best Match Category:</h6>
+                            <p class="text-primary">{{ results.exemplar_comparison.best_match.title() }}</p>
+                            
+                            <h6>Match Score:</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-3">
+                                    <div class="progress-bar" style="width: {{ results.exemplar_comparison.match_score }}%"></div>
+                                </div>
+                                <span class="fw-bold">{{ "%.1f"|format(results.exemplar_comparison.match_score) }}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {% if results.exemplar_comparison.missing_skills %}
+                            <h6>Skills to Consider Adding:</h6>
+                            <div class="skills-suggestions">
+                                {% for skill in results.exemplar_comparison.missing_skills[:5] %}
+                                <span class="skill-suggestion">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Job Role Predictions -->
+    {% if results.job_predictions %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-navy">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-briefcase me-2"></i>Recommended Job Roles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Based on your resume content, these roles align well with your profile:</p>
+                    
+                    <div class="row g-3">
+                        {% for prediction in results.job_predictions[:4] %}
+                        <div class="col-md-6">
+                            <div class="job-prediction">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">{{ prediction.role }}</h6>
+                                    <span class="match-score">{{ prediction.match_score }}%</span>
+                                </div>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar" style="width: {{ prediction.match_score }}%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-tags me-1"></i>
+                                    {{ prediction.matched_keywords|join(', ') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Steps -->
+    <div class="row">
+        <div class="col-12">
+            <div class="action-steps">
+                <h5 class="mb-3">
+                    <i class="fas fa-list-check me-2"></i>Action Plan
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="action-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h6>Address High Priority</h6>
+                                <p>Focus on critical issues first for maximum impact</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="action-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h6>Update & Optimize</h6>
+                                <p>Implement recommendations and add missing keywords</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="action-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h6>Re-analyze</h6>
+                                <p>Upload your improved resume to track progress</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to recommendation cards
+    const recCards = document.querySelectorAll('.recommendation-card');
+    recCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

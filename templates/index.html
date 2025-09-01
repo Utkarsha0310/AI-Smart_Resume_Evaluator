@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Resume - AI Resume Evaluator{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Hero Section -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold gradient-text mb-3">
+                    <i class="fas fa-brain me-3"></i>AI Resume Evaluator
+                </h1>
+                <p class="lead text-muted">
+                    Get instant, AI-powered analysis of your resume with detailed insights, 
+                    improvement recommendations, and ATS compatibility scoring.
+                </p>
+            </div>
+
+            <!-- Upload Card -->
+            <div class="card card-navy shadow-lg">
+                <div class="card-header navy-gradient text-white text-center py-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>Upload Your Resume
+                    </h4>
+                </div>
+                
+                <div class="card-body p-5">
+                    <form action="{{ url_for('upload_resume') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                        <!-- File Upload Area -->
+                        <div class="upload-area mb-4" id="uploadArea">
+                            <div class="upload-content text-center">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h5>Drag & Drop your PDF here</h5>
+                                <p class="text-muted">or click to browse files</p>
+                                <input type="file" name="resume" id="resumeFile" accept=".pdf" required class="d-none">
+                            </div>
+                        </div>
+                        
+                        <!-- File Info -->
+                        <div id="fileInfo" class="file-info d-none mb-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                                    <div>
+                                        <h6 class="mb-0" id="fileName"></h6>
+                                        <small class="text-muted" id="fileSize"></small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Mode Toggle -->
+                        <div class="analysis-mode mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-cogs me-2"></i>Analysis Mode
+                            </h6>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="heavyMode" name="heavy_mode">
+                                <label class="form-check-label" for="heavyMode">
+                                    <strong>Heavy Mode</strong> - More accurate but slower analysis
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Light mode uses faster models, Heavy mode provides deeper analysis
+                            </small>
+                        </div>
+
+                        <!-- Features List -->
+                        <div class="features-grid mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-spell-check text-success me-2"></i>
+                                        <span>Grammar & Language Analysis</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-robot text-primary me-2"></i>
+                                        <span>ATS Compatibility Check</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-key text-warning me-2"></i>
+                                        <span>Keyword Optimization</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-chart-line text-info me-2"></i>
+                                        <span>Performance Scoring</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-lightbulb text-danger me-2"></i>
+                                        <span>Improvement Suggestions</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="feature-item">
+                                        <i class="fas fa-file-download text-secondary me-2"></i>
+                                        <span>Professional PDF Report</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn" disabled>
+                                <span class="spinner-border spinner-border-sm me-2 d-none" id="uploadSpinner"></span>
+                                <i class="fas fa-magic me-2" id="submitIcon"></i>
+                                <span id="submitText">Analyze Resume</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="row mt-5 g-4">
+                <div class="col-md-4">
+                    <div class="info-card text-center">
+                        <div class="info-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h6>Secure & Private</h6>
+                        <p class="small text-muted">Your resume is processed securely and not stored permanently</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-card text-center">
+                        <div class="info-icon">
+                            <i class="fas fa-zap"></i>
+                        </div>
+                        <h6>Instant Results</h6>
+                        <p class="small text-muted">Get comprehensive analysis results in under 30 seconds</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-card text-center">
+                        <div class="info-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h6>AI-Powered</h6>
+                        <p class="small text-muted">Advanced NLP models provide human-like analysis quality</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('resumeFile');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFile = document.getElementById('removeFile');
+    const submitBtn = document.getElementById('submitBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitText = document.getElementById('submitText');
+    const submitIcon = document.getElementById('submitIcon');
+    const uploadSpinner = document.getElementById('uploadSpinner');
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFileSelect(this.files[0]);
+        }
+    });
+
+    // Remove file
+    removeFile.addEventListener('click', function() {
+        fileInput.value = '';
+        fileInfo.classList.add('d-none');
+        uploadArea.classList.remove('d-none');
+        submitBtn.disabled = true;
+    });
+
+    // Handle file selection
+    function handleFileSelect(file) {
+        if (file.type !== 'application/pdf') {
+            alert('Please select a PDF file.');
+            return;
+        }
+
+        if (file.size > 16 * 1024 * 1024) { // 16MB
+            alert('File size must be less than 16MB.');
+            return;
+        }
+
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        uploadArea.classList.add('d-none');
+        fileInfo.classList.remove('d-none');
+        submitBtn.disabled = false;
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission
+    uploadForm.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        submitText.textContent = 'Analyzing...';
+        submitIcon.classList.add('d-none');
+        uploadSpinner.classList.remove('d-none');
+    });
+});
+</script>
+{% endblock %}

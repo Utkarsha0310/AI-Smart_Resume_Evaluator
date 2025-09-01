@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Visualizations - AI Resume Evaluator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-pie me-2"></i>Interactive Visualizations
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Comprehensive data insights and analytics dashboard
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('improve') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-lightbulb me-1"></i>Recommendations
+                    </a>
+                    <a href="{{ url_for('download_report') }}" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i>Download Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="chart-controls">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-section="overview">
+                        <i class="fas fa-tachometer-alt me-1"></i>Overview
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-section="performance">
+                        <i class="fas fa-chart-line me-1"></i>Performance
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-section="content">
+                        <i class="fas fa-edit me-1"></i>Content Analysis
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" data-section="predictions">
+                        <i class="fas fa-crystal-ball me-1"></i>Predictions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview Section -->
+    <div class="chart-section" id="overview-section">
+        <!-- Score Overview -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-radar me-2"></i>Performance Radar
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="scoresRadarChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Score Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="scoresPieChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Coverage -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-check me-2"></i>Resume Section Coverage
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="sectionCoverageChart" width="600" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Priority Issues
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priorityIssuesChart" width="300" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Section -->
+    <div class="chart-section d-none" id="performance-section">
+        <!-- Performance Metrics -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Category Performance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceBarChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-gauge me-2"></i>ATS Compatibility
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="atsGaugeChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Readability Analysis -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book-open me-2"></i>Readability Metrics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="readabilityChart" width="600" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-spell-check me-2"></i>Grammar Score
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="grammarDoughnutChart" width="300" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Analysis Section -->
+    <div class="chart-section d-none" id="content-section">
+        <!-- Keyword Analysis -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-hashtag me-2"></i>Top Keywords Frequency
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="keywordFrequencyChart" width="600" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-running me-2"></i>Action Verbs Usage
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="actionVerbsChart" width="300" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Statistics -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-text me-2"></i>Content Statistics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="contentStatsChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tags me-2"></i>Entity Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="entityDistributionChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyword Density Heatmap -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-fire me-2"></i>Keyword Density Analysis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="keywordDensityChart" width="800" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictions Section -->
+    <div class="chart-section d-none" id="predictions-section">
+        <!-- Job Role Predictions -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-briefcase me-2"></i>Job Role Match Scores
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="jobPredictionsChart" width="600" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>Industry Comparison
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="industryComparisonChart" width="300" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Improvement Potential -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Improvement Potential
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="improvementPotentialChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-target me-2"></i>Score Projection
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="scoreProjectionChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benchmark Comparison -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-navy chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-balance-scale me-2"></i>Benchmark Comparison
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="benchmarkComparisonChart" width="800" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row">
+        <div class="col-12">
+            <div class="export-options">
+                <h5 class="mb-3">
+                    <i class="fas fa-download me-2"></i>Export Options
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100" id="exportChartsBtn">
+                            <i class="fas fa-image me-2"></i>Export Charts
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100" id="exportDataBtn">
+                            <i class="fas fa-file-csv me-2"></i>Export Data
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('download_report') }}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-file-pdf me-2"></i>PDF Report
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100" id="shareResultsBtn">
+                            <i class="fas fa-share me-2"></i>Share Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts with data
+    const resultsData = {{ results|tojson }};
+    const chartManager = new ChartManager(resultsData);
+    
+    // Section navigation
+    const sectionButtons = document.querySelectorAll('[data-section]');
+    const sections = document.querySelectorAll('.chart-section');
+    
+    sectionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetSection = this.dataset.section;
+            
+            // Update active button
+            sectionButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show target section
+            sections.forEach(section => {
+                section.classList.add('d-none');
+            });
+            document.getElementById(targetSection + '-section').classList.remove('d-none');
+            
+            // Initialize charts for the section
+            chartManager.initializeSection(targetSection);
+        });
+    });
+    
+    // Initialize overview section by default
+    chartManager.initializeSection('overview');
+    
+    // Export functionality
+    document.getElementById('exportChartsBtn').addEventListener('click', function() {
+        chartManager.exportAllCharts();
+    });
+    
+    document.getElementById('exportDataBtn').addEventListener('click', function() {
+        chartManager.exportData();
+    });
+    
+    document.getElementById('shareResultsBtn').addEventListener('click', function() {
+        // Implement sharing functionality
+        if (navigator.share) {
+            navigator.share({
+                title: 'Resume Analysis Results',
+                text: `My resume scored ${resultsData.scores.composite}/100 on the AI Resume Evaluator!`,
+                url: window.location.href
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Results URL copied to clipboard!');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - AI Resume Evaluator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-bar me-2"></i>Analysis Results
+                    </h2>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-file-pdf me-1"></i>{{ filename }}
+                        <span class="ms-3">
+                            <i class="fas fa-clock me-1"></i>{{ results.timestamp[:19] if results.timestamp }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('download_report') }}" class="btn btn-success me-2">
+                        <i class="fas fa-download me-1"></i>Download Report
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-upload me-1"></i>New Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Score Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-navy shadow-lg">
+                <div class="card-body text-center py-5">
+                    <div class="overall-score mb-3">
+                        <div class="score-circle" id="scoreCircle" data-score="{{ results.scores.composite }}">
+                            <span class="score-number">{{ results.scores.composite }}</span>
+                            <span class="score-total">/100</span>
+                        </div>
+                    </div>
+                    <h3 class="tier-badge" style="color: {{ results.scores.tier_color }}">
+                        {{ results.scores.tier }}
+                    </h3>
+                    <p class="text-muted">Overall Resume Performance Score</p>
+                    
+                    {% if results.scores.composite >= 80 %}
+                    <div class="achievement-badge">
+                        <i class="fas fa-trophy text-warning me-2"></i>
+                        Excellent Performance!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Scores -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card card-navy">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Detailed Score Breakdown
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="score-breakdown">
+                        <!-- Grammar Score -->
+                        <div class="score-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="score-label">
+                                    <i class="fas fa-spell-check me-2"></i>Grammar & Language
+                                </span>
+                                <span class="score-value">{{ results.scores.grammar }}/100</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ results.scores.grammar }}%; background-color: {{ 'var(--success)' if results.scores.grammar >= 80 else 'var(--warning)' if results.scores.grammar >= 60 else 'var(--danger)' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {% if results.grammar.error_count == 0 %}
+                                    No grammar errors detected
+                                {% else %}
+                                    {{ results.grammar.error_count }} potential issue(s) found
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- Readability Score -->
+                        <div class="score-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="score-label">
+                                    <i class="fas fa-book-open me-2"></i>Readability
+                                </span>
+                                <span class="score-value">{{ results.scores.readability }}/100</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ results.scores.readability }}%; background-color: {{ 'var(--success)' if results.scores.readability >= 80 else 'var(--warning)' if results.scores.readability >= 60 else 'var(--danger)' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                Flesch Reading Ease: {{ "%.1f"|format(results.readability.flesch_ease) }}
+                            </small>
+                        </div>
+
+                        <!-- Formatting Score -->
+                        <div class="score-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="score-label">
+                                    <i class="fas fa-align-left me-2"></i>Structure & Formatting
+                                </span>
+                                <span class="score-value">{{ results.scores.formatting }}/100</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ results.scores.formatting }}%; background-color: {{ 'var(--success)' if results.scores.formatting >= 80 else 'var(--warning)' if results.scores.formatting >= 60 else 'var(--danger)' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ results.structure.found_sections }} essential sections found
+                            </small>
+                        </div>
+
+                        <!-- ATS Score -->
+                        <div class="score-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="score-label">
+                                    <i class="fas fa-robot me-2"></i>ATS Compatibility
+                                </span>
+                                <span class="score-value">{{ results.scores.ats }}/100</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ results.scores.ats }}%; background-color: {{ 'var(--success)' if results.scores.ats >= 80 else 'var(--warning)' if results.scores.ats >= 60 else 'var(--danger)' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {% if results.ats.issues %}
+                                    {{ results.ats.issues|length }} compatibility issue(s)
+                                {% else %}
+                                    No major ATS issues detected
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- Keywords Score -->
+                        <div class="score-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="score-label">
+                                    <i class="fas fa-key me-2"></i>Keyword Strength
+                                </span>
+                                <span class="score-value">{{ results.scores.keywords }}/100</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ results.scores.keywords }}%; background-color: {{ 'var(--success)' if results.scores.keywords >= 80 else 'var(--warning)' if results.scores.keywords >= 60 else 'var(--danger)' }}">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ results.keywords.count }} relevant keywords identified
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Stats -->
+            <div class="card card-navy mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Quick Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-2">
+                        <i class="fas fa-file-word text-primary me-2"></i>
+                        <span class="stat-label">Word Count:</span>
+                        <span class="stat-value">{{ results.word_count }}</span>
+                    </div>
+                    <div class="stat-item mb-2">
+                        <i class="fas fa-brain text-info me-2"></i>
+                        <span class="stat-label">Analysis Mode:</span>
+                        <span class="stat-value">
+                            {% if results.heavy_mode %}Heavy{% else %}Light{% endif %}
+                        </span>
+                    </div>
+                    <div class="stat-item mb-2">
+                        <i class="fas fa-tag text-warning me-2"></i>
+                        <span class="stat-label">Keywords Found:</span>
+                        <span class="stat-value">{{ results.keywords.count }}</span>
+                    </div>
+                    {% if results.action_verbs %}
+                    <div class="stat-item">
+                        <i class="fas fa-running text-success me-2"></i>
+                        <span class="stat-label">Action Verbs:</span>
+                        <span class="stat-value">{{ results.action_verbs.unique_verbs }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Top Keywords -->
+            <div class="card card-navy">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-hashtag me-2"></i>Top Keywords
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="keyword-cloud">
+                        {% for keyword, score in results.keywords.top_10[:8] %}
+                        <span class="keyword-tag" style="font-size: {{ 0.8 + (score * 0.5) }}rem">
+                            {{ keyword }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row">
+        <div class="col-12">
+            <div class="next-steps-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-arrow-right me-2"></i>Next Steps
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('improve') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Get Recommendations
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('visualization') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            View Visualizations
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('download_report') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-file-pdf me-2"></i>
+                            Download Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/confetti.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const score = {{ results.scores.composite }};
+    const scoreCircle = document.getElementById('scoreCircle');
+    
+    // Animate score circle
+    animateScore(scoreCircle, score);
+    
+    // Trigger confetti for high scores
+    if (score >= 80) {
+        setTimeout(() => {
+            triggerConfetti();
+        }, 1500);
+    }
+});
+
+function animateScore(element, targetScore) {
+    let currentScore = 0;
+    const increment = targetScore / 50; // 50 frames
+    const interval = setInterval(() => {
+        currentScore += increment;
+        if (currentScore >= targetScore) {
+            currentScore = targetScore;
+            clearInterval(interval);
+        }
+        
+        const scoreNumber = element.querySelector('.score-number');
+        scoreNumber.textContent = Math.round(currentScore);
+        
+        // Update circle color based on score
+        const hue = (currentScore / 100) * 120; // Red to green
+        element.style.setProperty('--score-color', `hsl(${hue}, 70%, 50%)`);
+    }, 30);
+}
+</script>
+{% endblock %}
