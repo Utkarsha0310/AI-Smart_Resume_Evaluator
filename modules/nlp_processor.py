@@ -5,49 +5,36 @@ import re
 from collections import Counter
 import numpy as np
 import textstat
-import language_tool_python
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+
+# ── Singleton spaCy model (loaded ONCE at startup, shared across requests) ──
+_spacy_model = None
+
+def get_spacy_model():
+    """Load spaCy model once and reuse across all requests."""
+    global _spacy_model
+    if _spacy_model is None:
+        for model_name in ["en_core_web_sm"]:
+            try:
+                _spacy_model = spacy.load(model_name)
+                logging.info(f"Loaded spaCy model: {model_name}")
+                break
+            except OSError:
+                logging.warning(f"spaCy model {model_name} not found")
+        if _spacy_model is None:
+            raise RuntimeError("No spaCy model available")
+    return _spacy_model
+
 
 class NLPProcessor:
     """Advanced NLP processing for resume analysis"""
     
     def __init__(self, heavy_mode: bool = False):
         self.heavy_mode = heavy_mode
-        self.nlp = None
+        self.nlp = get_spacy_model()  # Reuse singleton — no reload
         self.sentence_transformer = None
-        self.grammar_tool = None
-        self._load_models()
-    
-    def _load_models(self):
-        """Load NLP models based on mode"""
-        try:
-            if self.heavy_mode:
-                # Heavy mode - more accurate but slower
-                model_name = "en_core_web_trf"
-            else:
-                # Light mode - faster but less accurate
-                model_name = "en_core_web_md"
-            
-            # Load spaCy model
-            try:
-                self.nlp = spacy.load(model_name)
-                logging.info(f"Loaded spaCy model: {model_name}")
-            except OSError:
-                # Fallback to smaller model
-                self.nlp = spacy.load("en_core_web_sm")
-                logging.warning(f"Fallback to en_core_web_sm model")
-            
-            # Sentence transformer temporarily disabled - using TF-IDF similarity instead
-            self.sentence_transformer = None
-            logging.info("Using TF-IDF for semantic similarity (sentence-transformers not available)")
-            
-            # Grammar checker is lazy-loaded in analyze_grammar() to save memory
-            logging.info("Grammar checker will be loaded on demand")
-                
-        except Exception as e:
-            logging.error(f"Error loading NLP models: {e}")
-            raise
     
     def extract_entities(self, text: str) -> Dict[str, List[str]]:
         """Extract named entities from text"""
@@ -66,48 +53,144 @@ class NLPProcessor:
         return entities
     
     def analyze_grammar(self, text: str) -> Dict[str, any]:
-        """Analyze grammar errors in text. Lazy-loads the Java-based grammar tool."""
-        grammar_tool = None
+        """Analyze grammar using spaCy + regex rules (pure Python, no Java).
+        
+        Checks for common grammar issues:
+        - Spelling errors (via spaCy's vocab)
+        - Sentence structure issues
+        - Capitalization errors
+        - Punctuation problems
+        - Common resume writing mistakes
+        """
+        errors = []
+        
         try:
-            # Lazy-load grammar tool to save memory (starts Java server ~300MB)
-            logging.info("Starting grammar checker (lazy load)...")
-            grammar_tool = language_tool_python.LanguageTool('en-US')
+            doc = self.nlp(text)
+            sentences = list(doc.sents)
             
-            matches = grammar_tool.check(text)
-            errors = []
+            # 1. Check for sentences not starting with capital letter
+            for sent in sentences:
+                sent_text = sent.text.strip()
+                if sent_text and sent_text[0].islower():
+                    errors.append({
+                        'message': 'Sentence should start with a capital letter',
+                        'context': sent_text[:80],
+                        'offset': sent.start_char,
+                        'length': 1,
+                        'category': 'CAPITALIZATION'
+                    })
             
-            for match in matches[:20]:  # Limit to first 20 errors
+            # 2. Check for repeated words (e.g., "the the")
+            repeated = re.finditer(r'\b(\w+)\s+\1\b', text, re.IGNORECASE)
+            for match in repeated:
                 errors.append({
-                    'message': match.message,
-                    'context': match.context,
-                    'offset': match.offset,
-                    'length': match.errorLength,
-                    'category': match.category
+                    'message': f'Repeated word: "{match.group(1)}"',
+                    'context': text[max(0, match.start()-20):match.end()+20],
+                    'offset': match.start(),
+                    'length': len(match.group()),
+                    'category': 'DUPLICATION'
                 })
             
+            # 3. Check for very long sentences (>40 words) — bad for resumes
+            for sent in sentences:
+                word_count = len([t for t in sent if not t.is_punct])
+                if word_count > 40:
+                    errors.append({
+                        'message': f'Very long sentence ({word_count} words). Consider breaking it up.',
+                        'context': sent.text.strip()[:80] + '...',
+                        'offset': sent.start_char,
+                        'length': len(sent.text),
+                        'category': 'STYLE'
+                    })
+            
+            # 4. Check for passive voice (common resume weakness)
+            passive_patterns = re.finditer(
+                r'\b(was|were|been|being|is|are|am)\s+([\w]+ed|[\w]+en)\b', 
+                text, re.IGNORECASE
+            )
+            passive_count = 0
+            for match in passive_patterns:
+                passive_count += 1
+                if passive_count <= 5:  # Only report first 5
+                    errors.append({
+                        'message': f'Possible passive voice: "{match.group()}". Use active voice for stronger impact.',
+                        'context': text[max(0, match.start()-20):match.end()+20],
+                        'offset': match.start(),
+                        'length': len(match.group()),
+                        'category': 'STYLE'
+                    })
+            
+            # 5. Check for possible misspellings using spaCy's vocabulary lookup
+            # en_core_web_sm doesn't have word vectors, so we use vocab membership
+            misspelled_count = 0
+            common_words_to_skip = {
+                'linkedin', 'github', 'stackoverflow', 'mongodb', 'postgresql',
+                'mysql', 'nodejs', 'reactjs', 'vuejs', 'angularjs', 'tensorflow',
+                'pytorch', 'kubernetes', 'aws', 'gcp', 'api', 'apis', 'sql',
+                'html', 'css', 'php', 'ui', 'ux', 'saas', 'devops', 'ci',
+                'cd', 'agile', 'scrum', 'jira', 'figma', 'kanban', 'crm',
+                'erp', 'frontend', 'backend', 'fullstack', 'javascript',
+                'typescript', 'django', 'flask', 'fastapi', 'nginx', 'redis'
+            }
+            for token in doc:
+                if (not token.is_stop and not token.is_punct and not token.like_num 
+                    and not token.is_space and len(token.text) > 2
+                    and not token.text.isupper()  # Skip acronyms
+                    and token.text.lower() not in common_words_to_skip
+                    and not token.ent_type_  # Skip named entities
+                    and token.text.isalpha()
+                    and token.text.lower() not in self.nlp.vocab):
+                    misspelled_count += 1
+                    if misspelled_count <= 5:  # Only report first 5
+                        errors.append({
+                            'message': f'Possible spelling issue: "{token.text}"',
+                            'context': text[max(0, token.idx-20):token.idx+len(token.text)+20],
+                            'offset': token.idx,
+                            'length': len(token.text),
+                            'category': 'SPELLING'
+                        })
+            
+            # 6. Check for missing punctuation at end of bullet points/lines
+            lines = text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if len(line) > 20 and line[-1].isalpha() and not line.isupper():
+                    # Lines that look like bullet points without ending punctuation
+                    if any(line.startswith(prefix) for prefix in ['•', '-', '▪', '●', '*']):
+                        pass  # Bullet points without periods are acceptable
+            
             # Calculate grammar score (0-100)
-            error_count = len(matches)
+            error_count = len(errors)
             word_count = len(text.split())
-            error_rate = error_count / max(word_count, 1) * 100
-            score = max(0, 100 - error_rate * 10)
+            
+            # Per-error deductions weighted by severity
+            score = 100
+            for err in errors:
+                cat = err.get('category', '')
+                if cat == 'SPELLING':
+                    score -= 5
+                elif cat == 'DUPLICATION':
+                    score -= 4
+                elif cat == 'CAPITALIZATION':
+                    score -= 3
+                elif cat == 'STYLE':
+                    score -= 2  # Style suggestions are softer
+                else:
+                    score -= 3
+            
+            # Bonus for well-structured text
+            if len(sentences) > 3 and error_count < 3:
+                score = min(100, score + 5)
             
             return {
-                'errors': errors,
-                'score': min(100, score),
+                'errors': errors[:20],  # Cap at 20 errors for display
+                'score': round(min(100, score), 1),
                 'error_count': error_count
             }
             
         except Exception as e:
             logging.error(f"Grammar analysis error: {e}")
             return {'errors': [], 'score': 85, 'error_count': 0}
-        finally:
-            # Always close the Java server to free memory
-            if grammar_tool:
-                try:
-                    grammar_tool.close()
-                    logging.info("Grammar checker closed (memory freed)")
-                except Exception:
-                    pass
     
     def calculate_readability(self, text: str) -> Dict[str, float]:
         """Calculate readability metrics"""
