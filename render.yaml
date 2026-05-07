@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: resumegenius
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+    healthCheckPath: /
+    autoDeploy: true

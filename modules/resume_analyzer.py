@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-import fitz  # PyMuPDF
+import pymupdf as fitz
 from datetime import datetime
 import re
 
@@ -187,10 +187,7 @@ class ResumeAnalyzer:
             
         except Exception as e:
             logging.error(f"Resume analysis error: {e}")
-            return {
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            }
+            raise
     
     def _calculate_scores(self, results: Dict) -> Dict:
         """Calculate individual and composite scores"""

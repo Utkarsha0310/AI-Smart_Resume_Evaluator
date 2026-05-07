@@ -37,10 +37,10 @@
     --bg-primary: var(--navy-dark);
     --bg-secondary: var(--navy-light);
     --bg-tertiary: var(--navy-medium);
-    --text-primary: #F8FAFC;
-    --text-secondary: #CBD5E1;
-    --text-muted: #94A3B8;
-    --border-color: #334155;
+    --text-primary: #FFFFFF;
+    --text-secondary: #F8FAFC;
+    --text-muted: #F8FAFC;
+    --border-color: #F8FAFC;
 }
 
 /* Light Theme Variables */

@@ -1,0 +1,12 @@
+flask>=3.1.2
+gunicorn>=23.0.0
+language-tool-python>=2.9.4
+matplotlib>=3.10.6
+numpy>=2.3.2
+pandas>=2.3.2
+pymupdf>=1.26.4
+reportlab>=4.4.3
+scikit-learn>=1.7.1
+spacy>=3.8.7
+textstat>=0.7.10
+werkzeug>=3.1.3

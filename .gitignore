@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Large data (54MB CSV + PDF dataset)
+data/Resume.csv
+data/data/
+data/.models/
+data/exemplar_clusters.pkl
+
+# User-generated
+uploads/
+reports/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Replit leftovers
+.local/
+.replit
+replit.nix
+replit.md
+.upm/
+.cache/
+.config/
+uv.lock
+pyproject.toml
+
+# Environment
+.env
