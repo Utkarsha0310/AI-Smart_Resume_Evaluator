@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: resumegenius
+    name: ai-smart-resume-evaluator
     runtime: docker
     dockerfilePath: ./Dockerfile
     envVars:
