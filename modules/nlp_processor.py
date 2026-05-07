@@ -25,11 +25,9 @@ class NLPProcessor:
             if self.heavy_mode:
                 # Heavy mode - more accurate but slower
                 model_name = "en_core_web_trf"
-                transformer_model = "all-mpnet-base-v2"
             else:
                 # Light mode - faster but less accurate
                 model_name = "en_core_web_md"
-                transformer_model = "all-MiniLM-L6-v2"
             
             # Load spaCy model
             try:
@@ -44,12 +42,8 @@ class NLPProcessor:
             self.sentence_transformer = None
             logging.info("Using TF-IDF for semantic similarity (sentence-transformers not available)")
             
-            # Initialize grammar checker
-            try:
-                self.grammar_tool = language_tool_python.LanguageTool('en-US')
-                logging.info("Loaded grammar checker")
-            except Exception as e:
-                logging.warning(f"Failed to load grammar checker: {e}")
+            # Grammar checker is lazy-loaded in analyze_grammar() to save memory
+            logging.info("Grammar checker will be loaded on demand")
                 
         except Exception as e:
             logging.error(f"Error loading NLP models: {e}")
@@ -72,12 +66,14 @@ class NLPProcessor:
         return entities
     
     def analyze_grammar(self, text: str) -> Dict[str, any]:
-        """Analyze grammar errors in text"""
-        if not self.grammar_tool:
-            return {'errors': [], 'score': 85, 'error_count': 0}
-        
+        """Analyze grammar errors in text. Lazy-loads the Java-based grammar tool."""
+        grammar_tool = None
         try:
-            matches = self.grammar_tool.check(text)
+            # Lazy-load grammar tool to save memory (starts Java server ~300MB)
+            logging.info("Starting grammar checker (lazy load)...")
+            grammar_tool = language_tool_python.LanguageTool('en-US')
+            
+            matches = grammar_tool.check(text)
             errors = []
             
             for match in matches[:20]:  # Limit to first 20 errors
@@ -104,6 +100,14 @@ class NLPProcessor:
         except Exception as e:
             logging.error(f"Grammar analysis error: {e}")
             return {'errors': [], 'score': 85, 'error_count': 0}
+        finally:
+            # Always close the Java server to free memory
+            if grammar_tool:
+                try:
+                    grammar_tool.close()
+                    logging.info("Grammar checker closed (memory freed)")
+                except Exception:
+                    pass
     
     def calculate_readability(self, text: str) -> Dict[str, float]:
         """Calculate readability metrics"""

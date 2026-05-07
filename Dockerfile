@@ -20,4 +20,6 @@ RUN mkdir -p uploads reports data
 
 EXPOSE 10000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "2", "--timeout", "120", "app:app"]
+# Single worker to fit in 512MB RAM (Render free tier)
+# Increased timeout for NLP analysis (grammar check can take 30-60s)
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--workers", "1", "--threads", "2", "--timeout", "180", "app:app"]
